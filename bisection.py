@@ -1,61 +1,94 @@
-def bisection_method(func, a, b, tol, true_value=None, max_iter=100):
-    """
-    Bisection Method for root finding.
-    
-    Parameters:
-    func       : function whose root we want to find
-    a, b       : interval [a, b]
-    tol        : maximum allowed error
-    true_value : optional, actual root (if known) to compute true error
-    max_iter   : maximum number of iterations
-    
-    Prints details of each iteration.
-    """
+import math
+import math
+import matplotlib.pyplot as plt
 
+def bisection_method(func, a, b, tolerance, true_value=None, max_iter=100):
+  
     if func(a) * func(b) > 0:
         print("Bisection method fails: f(a) and f(b) must have opposite signs.")
         return None
 
-    print(f"{'Iter':<5}{'Lower':<15}{'Upper':<15}{'Root':<15}{'Approx Error':<20}{'True Error':<20}")
-    print("-" * 85)
+   
+    L0 = b - a
 
-    root = a
+    
+    theoretical = math.ceil(math.log2(L0 / tolerance))
+   # print(f"Initial interval length L0 = {L0}")
+    print(f"Theoretical minimum iterations required: {theoretical}\n")
+
+    print(f"{'Iter':<5}{'Lower':<15}{'Midpoint':<15}{'Upper':<15}{'Abs % Error':<20}{'True Error':<20}")
+    
+    prev_root = None
+    abs_errors = []
+
+
+    root = (a + b) / 2
     for i in range(1, max_iter + 1):
-        prev_root = root
-        root = (a + b) / 2
         f_root = func(root)
-
-        # Approximation error
-        approx_error = abs(root - prev_root) if i > 1 else None
-
-        # True error (if true root is given)
+        abs_percent_error = (Lk / root) * 100 if root != 0 else None
         true_error = abs(true_value - root) if true_value is not None else None
 
-        # Print iteration data
-        print(f"{i:<5}{a:<15.8f}{b:<15.8f}{root:<15.8f}"
-              f"{(approx_error if approx_error is not None else '---')!s:<20}"
+      
+        Lk = (b - a)
+               
+        if prev_root is None:
+            es_pct = None
+        else:
+            es_pct = abs((root - prev_root) / root) * 100
+
+        # True error and absolute error
+        if true_value is not None:
+            et_pct = ((true_value - root) / true_value) * 100
+            ea_pct = abs(et_pct)
+        else:
+            et_pct = None
+            ea_pct = None
+
+
+       
+        abs_percent_error = (Lk / root) * 100 if root != 0 else None
+        
+      
+
+        
+        print(f"{i:<5}{a:<15.10f}{b:<15.10f}{root:<15.10f}"
+              f"{Lk:<15.10f}"
+              f"{(f'{abs_percent_error:.1-f}%' ):<20}"
               f"{(true_error if true_error is not None else '---')!s:<20}")
 
-        # Check stopping condition
-        if approx_error is not None and approx_error < tol:
-            break
+        
+        if true_value is not None:  
+            if true_error is not None and true_error < tolerance:
+                break
+        else: 
+            if Lk < tolerance:
+                break
 
-        # Update interval
+       
         if func(a) * f_root < 0:
             b = root
         else:
             a = root
 
+       
+        root = (a + b) / 2
+
     print("\nFinal Root Approximation:", root)
+    print(f"Total Iterations Performed: {i}")
+    
+    
+
     return root
 
 
-# Example usage
+
 if __name__ == "__main__":
-    import math
+   
 
-    # Example: Solve f(x) = x^3 - x - 2 in [1, 2]
-    def f(x): return x**3 - x - 2
-
-    true_root = 1.5213797  # known root for comparison
-    bisection_method(f, a=1, b=2, tol=1e-6, true_value=true_root)
+    # Problem 1
+    def f2(x): return  225 + 82*x - 90*x**2 + 44*x**3 - 8*x**4 + 0.7*x**5
+   
+    bisection_method(f2, a=-1.2, b=-1, tolerance=.01)
+    
+    
+    
