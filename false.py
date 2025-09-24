@@ -2,22 +2,23 @@ import math
 import matplotlib.pyplot as plt
 
 def false_position_method(func, lower, upper, tolerance, max_iter=100):
-    a=lower
-    b=upper
+    a = lower
+    b = upper
     if func(a) * func(b) > 0:
         print("False Position method fails")
         return None
 
-    print(f"{'Iter':<5}{'xl':>16}{'xu':>16}{'xr':>16}{'f(xr)':>16}{'es(%)':>12}")
+    print(f"{'Iter':<5}{'xl':>12}{'f(xl)':>12}{'xu':>12}{'f(xu)':>12}{'xr':>12}{'f(xr)':>12}{'es(%)':>12}")
 
     prev_root = None
     es_series = []
     divergence_counter = 0
 
-    
     root = (a * func(b) - b * func(a)) / (func(b) - func(a))
 
     for i in range(1, max_iter + 1):
+        f_a = func(a)
+        f_b = func(b)
         f_root = func(root)
 
         if prev_root is None:
@@ -27,11 +28,13 @@ def false_position_method(func, lower, upper, tolerance, max_iter=100):
 
         print(
             f"{i:<5}"
-            f"{a:16.10f}{b:16.10f}{root:16.10f}{f_root:16.10f}"
+            f"{a:12.6f}{f_a:12.6f}"
+            f"{b:12.6f}{f_b:12.6f}"
+            f"{root:12.6f}{f_root:12.6f}"
             f"{(f'{es:.6f}' if es is not None else '---'):>12}"
         )
 
-        # store error before checking stop condition
+        # store error
         if es is not None:
             es_series.append(es)
 
@@ -42,7 +45,7 @@ def false_position_method(func, lower, upper, tolerance, max_iter=100):
 
         # detect divergence
         if es is not None:
-            if len(es_series) > 1 and es >= es_series[-2]:#the second-to-last element.
+            if len(es_series) > 1 and es >= es_series[-2]:
                 divergence_counter += 1
             else:
                 divergence_counter = 0
@@ -52,13 +55,12 @@ def false_position_method(func, lower, upper, tolerance, max_iter=100):
                 break
 
         # update interval
-        if func(a) * f_root < 0:
+        if f_a * f_root < 0:
             b = root
         else:
             a = root
 
         prev_root = root
-        # false position update
         root = (a * func(b) - b * func(a)) / (func(b) - func(a))
 
     print("\nFinal Root Approximation:", f"{root:.10f}")
@@ -79,6 +81,5 @@ def false_position_method(func, lower, upper, tolerance, max_iter=100):
 
 def f2(x): 
     return (x-4)*(x-4)*(x+2)
-
 
 false_position_method(f2, lower=-2.5, upper=-1.0, tolerance=.1)

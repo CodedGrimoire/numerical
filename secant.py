@@ -1,10 +1,11 @@
 import math
 import matplotlib.pyplot as plt
 
-def secant_method(func, x0, x1, tolerance=1e-6, max_iter=100):
+def secant_method(func, x0, x1, tolerance, max_iter=100):
     print(f"{'Iter':<5}{'xi-1':>16}{'xi':>16}{'xi+1':>16}{'f(xi+1)':>16}{'es(%)':>12}")
 
     guesses = [x0, x1]
+    es_series = []
     divergence_counter = 0
 
     for i in range(1, max_iter + 1):
@@ -25,6 +26,9 @@ def secant_method(func, x0, x1, tolerance=1e-6, max_iter=100):
         print(f"{i:<5}{x0:16.10f}{x1:16.10f}{x_next:16.10f}{f_next:16.10f}{es:12.6f}")
 
         guesses.append(x_next)
+
+        if es != float("inf"):
+            es_series.append(es)
 
         # stopping condition
         if es <= tolerance:
@@ -47,32 +51,15 @@ def secant_method(func, x0, x1, tolerance=1e-6, max_iter=100):
     print("\nFinal Root Approximation:", f"{x_next:.10f}")
     print("Total Iterations Performed:", i)
 
-    # Plot convergence graph
-    plt.figure()
-    x_vals = [xi for xi in guesses]
-    y_vals = [func(xi) for xi in guesses]
-    root_approx = guesses[-1]
-
-    # plot function curve
-    xs = [x/100 for x in range(int(min(guesses)*100)-50, int(max(guesses)*100)+50)]
-    ys = [func(x) for x in xs]
-    plt.plot(xs, ys, label="f(x)")
-
-    # mark guesses
-    plt.scatter(x_vals, y_vals, color="red", zorder=5, label="Guesses")
-    for j, (gx, gy) in enumerate(zip(x_vals, y_vals)):
-        plt.text(gx, gy, f"x{j}", fontsize=8, ha="right")
-
-    # vertical line at root
-    plt.axvline(root_approx, color="green", linestyle="--", label=f"Root ≈ {root_approx:.4f}")
-
-    plt.axhline(0, color="black", linewidth=0.8)
-    plt.xlabel("x")
-    plt.ylabel("f(x)")
-    plt.title("Secant Method Convergence")
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+    # Plot iteration vs error
+    if es_series:
+        plt.figure()
+        plt.plot(range(1, len(es_series)+1), es_series, marker='o')
+        plt.xlabel("Iteration")
+        plt.ylabel("Approximate relative error (%)")
+        plt.title("Secant Method: Iteration vs Error")
+        plt.grid(True)
+        plt.show()
 
     return x_next
 

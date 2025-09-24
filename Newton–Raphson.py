@@ -74,7 +74,10 @@ def f2(x):
 
 # Derivative of f2(x)
 df2 = differentiate(f2)
-    
+ 
+def df2(x):
+    return 2 * (x - 4) * (x + 2) + (x - 4) * (x - 4)
+   
 
 # Run Newton–Raphson
 newton_raphson(f2, df2, x0=-2.5, tolerance=0.1)
