@@ -66,7 +66,7 @@ def secant_method(func, x0, x1, tolerance, max_iter=100):
 
 # Example function
 def f2(x):
-    return (x - 4) * (x - 4) * (x + 2)
+    return ((9.81*x)/15)*(1-math.exp((-15/x)*10))-36
 
 # Run Secant Method
-secant_method(f2, x0=-2.5, x1=-1.5, tolerance=0.1)
+secant_method(f2, x0=30, x1=40, tolerance=0.001)

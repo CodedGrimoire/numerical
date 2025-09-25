@@ -27,12 +27,13 @@ def false_position_method(func, lower, upper, tolerance, max_iter=100):
             es = abs((root - prev_root) / root) * 100 if root != 0 else float('inf')
 
         print(
-            f"{i:<5}"
-            f"{a:12.6f}{f_a:12.6f}"
-            f"{b:12.6f}{f_b:12.6f}"
-            f"{root:12.6f}{f_root:12.6f}"
-            f"{(f'{es:.6f}' if es is not None else '---'):>12}"
-        )
+    f"{i:<5} "
+    f"{a:12.10f} {f_a:12.10f} "
+    f"{b:12.10f} {f_b:12.10f} "
+    f"{root:12.10f} {f_root:12.10f} "
+    f"{(f'{es:.10f}' if es is not None else '---'):>12}"
+)
+
 
         # store error
         if es is not None:
@@ -80,6 +81,6 @@ def false_position_method(func, lower, upper, tolerance, max_iter=100):
 
 
 def f2(x): 
-    return (x-4)*(x-4)*(x+2)
+    return ((9.81*x)/15)*(1-math.exp((-15/x)*10))-36
 
-false_position_method(f2, lower=-2.5, upper=-1.0, tolerance=.1)
+false_position_method(f2, lower=40, upper=80, tolerance=.001)

@@ -25,7 +25,7 @@ def bisection_method(func, a, b, tolerance, true_value=None, max_iter=100):
     root = (a + b) / 2
     for i in range(1, max_iter + 1):
         f_root = func(root)
-        abs_percent_error = (Lk / root) * 100 if root != 0 else None
+        abs_percent_error = (L0 / root) * 100 if root != 0 else None
         true_error = abs(true_value - root) if true_value is not None else None
 
       
@@ -85,10 +85,10 @@ def bisection_method(func, a, b, tolerance, true_value=None, max_iter=100):
 if __name__ == "__main__":
    
 
-    # Problem 1
-    def f2(x): return  225 + 82*x - 90*x**2 + 44*x**3 - 8*x**4 + 0.7*x**5
+    
+    def f2(x): return  x**3-10*x +5*math.exp(-x/2)-2
    
-    bisection_method(f2, a=-1.2, b=-1, tolerance=.01)
+    bisection_method(f2, a=.1, b=.4, tolerance=.001)
     
     
     

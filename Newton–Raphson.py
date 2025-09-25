@@ -18,14 +18,14 @@ def newton_raphson(func, dfunc, x0, tolerance=1e-6, max_iter=100):
             print("Derivative is zero. Method fails.")
             return None
 
-        # Newton-Raphson update
+        
         x_next = xi - f_xi / df_xi
         f_next = func(x_next)
 
         # compute error
         es = abs((x_next - xi) / x_next) * 100 if x_next != 0 else float("inf")
 
-        print(f"{i:<5}{xi:16.10f}{x_next:16.10f}{f_next:16.10f}{es:12.6f}")
+        print(f"{i:<5}{xi:16.10f}{x_next:16.10f}{f_next:16.10f}\t{es:12.10f}")
 
         # store error
         es_series.append(es)
@@ -35,7 +35,7 @@ def newton_raphson(func, dfunc, x0, tolerance=1e-6, max_iter=100):
             print("\nConverged successfully.")
             break
 
-        # detect divergence
+        
         if len(es_series) > 1 and es >= es_series[-2]:
             divergence_counter += 1
         else:
@@ -45,12 +45,12 @@ def newton_raphson(func, dfunc, x0, tolerance=1e-6, max_iter=100):
             print("\nMethod is diverging. Exiting early.")
             break
 
-        xi = x_next  # update for next iteration
+        xi = x_next  
 
     print("\nFinal Root Approximation:", f"{x_next:.10f}")
     print("Total Iterations Performed:", i)
 
-    # plot error
+    
     if es_series:
         plt.figure()
         plt.plot(range(1, 1 + len(es_series)), es_series, marker="o")
@@ -62,22 +62,19 @@ def newton_raphson(func, dfunc, x0, tolerance=1e-6, max_iter=100):
 
     return x_next
 
-def differentiate(f2):
-    x = sp.symbols('x')
-    f_sym = f2(x)
-    df_sym = sp.diff(f_sym, x)           # Symbolic derivative
-    df = sp.lambdify(x, df_sym, 'math')  # Convert to numeric function
-    return df
-# Example function
+
+
+
 def f2(x):
-    return (x - 4) * (x - 4) * (x + 2)
+    return  ((9.81*x)/15)*(1-math.exp((-15/x)*10))-36
 
 # Derivative of f2(x)
-df2 = differentiate(f2)
+#df2 = differentiate(f2)
  
-def df2(x):
-    return 2 * (x - 4) * (x + 2) + (x - 4) * (x - 4)
+def df2(m):
+    return (9.81/15) * (1 - math.exp(-150/m) - (150/m) * math.exp(-150/m))
+
    
 
-# Run Newton–Raphson
-newton_raphson(f2, df2, x0=-2.5, tolerance=0.1)
+
+newton_raphson(f2, df2, x0=40, tolerance=0.001)
