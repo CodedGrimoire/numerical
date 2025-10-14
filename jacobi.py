@@ -1,17 +1,14 @@
-# --- JACOBI METHOD (pure Python) with edge-case handling ---
 import math
 import matplotlib.pyplot as plt
 
 EPS_PIVOT = 1e-14
 
 def det_via_elimination(Ain):
-    """Return determinant estimate using Gaussian elimination with partial pivoting."""
     A = [row[:] for row in Ain]
     n = len(A)
     det = 1.0
     swap_count = 0
     for i in range(n):
-        # partial pivot
         piv = i
         maxabs = abs(A[i][i])
         for r in range(i+1, n):
@@ -19,10 +16,10 @@ def det_via_elimination(Ain):
                 maxabs = abs(A[r][i])
                 piv = r
         if maxabs < EPS_PIVOT:
-            return 0.0  # singular
+            return 0.0
         if piv != i:
             A[i], A[piv] = A[piv], A[i]
-            swap_count ^= 1  # flip parity
+            swap_count ^= 1
         pivot = A[i][i]
         for r in range(i+1, n):
             m = A[r][i] / pivot
@@ -43,54 +40,25 @@ def is_strictly_diag_dominant(A):
             return False
     return True
 
-def try_fix_zero_diagonal(A, b):
-    """Try to swap rows to avoid zero/near-zero diagonal elements. Returns True if fixed/ok."""
-    n = len(A)
-    for i in range(n):
-        if abs(A[i][i]) < EPS_PIVOT:
-            # find a row j>i with nonzero in column i
-            swap_with = None
-            for j in range(i+1, n):
-                if abs(A[j][i]) >= EPS_PIVOT:
-                    swap_with = j
-                    break
-            if swap_with is None:
-                return False
-            A[i], A[swap_with] = A[swap_with], A[i]
-            b[i], b[swap_with] = b[swap_with], b[i]
-    return True
-
-def jacobi_method(A_in, b_in, tol=1e-3, max_iter=100, diverge_patience=5):
-    """
-    Jacobi iterative solver with:
-      - singularity check (det ≈ 0)
-      - zero-diagonal row-swap fix
-      - diagonal dominance warning
-      - divergence/oscillation early-stop
-    Starts from x=0. Returns x or None.
-    """
-    # deep copies (we may swap rows)
+def jacobi_method(A_in, b_in, tol, max_iter=100, diverge_patience=5):
     A = [row[:] for row in A_in]
     b = b_in[:]
     n = len(b)
 
-    # basic shape checks
     if any(len(row) != n for row in A):
         print("Error: A must be square and match b.")
         return None
 
-    # singularity check
     d = det_via_elimination(A)
     if abs(d) < EPS_PIVOT:
-        print("Jacobi aborted: det(A) ≈ 0 (singular or ill-conditioned).")
+        print("Jacobi aborted: det(A) ≈ 0 (singular/ill-conditioned).")
         return None
 
-    # zero diagonal fix
-    if not try_fix_zero_diagonal(A, b):
-        print("Jacobi aborted: zero/near-zero diagonal could not be fixed by row swap.")
-        return None
+    for i in range(n):
+        if abs(A[i][i]) < EPS_PIVOT:
+            print(f"Jacobi aborted: A[{i},{i}] is zero/near-zero; cannot proceed without row swaps.")
+            return None
 
-    # dominance warning
     if not is_strictly_diag_dominant(A):
         print("Warning: A is not strictly diagonally dominant; Jacobi may diverge or be slow.")
 
@@ -98,7 +66,6 @@ def jacobi_method(A_in, b_in, tol=1e-3, max_iter=100, diverge_patience=5):
     es_series = []
     worse_streak = 0
 
-    # header
     header = f"{'Iter':<5}" + "".join([f"{('x'+str(i+1)):>12}" for i in range(n)]) + f"{'es(%)':>12}"
     print(header)
 
@@ -111,7 +78,6 @@ def jacobi_method(A_in, b_in, tol=1e-3, max_iter=100, diverge_patience=5):
                     s += A[i][j] * x_old[j]
             x_new[i] = (b[i] - s) / A[i][i]
 
-        # error (∞-norm)
         max_diff = max(abs(x_new[i] - x_old[i]) for i in range(n))
         denom = max(max(abs(v) for v in x_new), 1e-12)
         es = (max_diff / denom) * 100.0
@@ -119,7 +85,6 @@ def jacobi_method(A_in, b_in, tol=1e-3, max_iter=100, diverge_patience=5):
 
         print(f"{it:<5}" + "".join([f"{x_new[i]:12.10f}" for i in range(n)]) + f"{es:12.8f}")
 
-        # divergence detector (non-decreasing error streak)
         if it >= 2 and es >= es_series[-2] - 1e-12:
             worse_streak += 1
         else:
@@ -134,7 +99,6 @@ def jacobi_method(A_in, b_in, tol=1e-3, max_iter=100, diverge_patience=5):
             print("\nConverged successfully (Jacobi).")
             break
 
-    # plot
     if es_series:
         plt.figure()
         plt.plot(range(1, len(es_series)+1), es_series, marker='o')
@@ -146,14 +110,13 @@ def jacobi_method(A_in, b_in, tol=1e-3, max_iter=100, diverge_patience=5):
 
     return x_old
 
-# ----- example -----
 A = [
-    [10.0, -1.0,  2.0],
-    [-1.0, 11.0, -1.0],
-    [ 2.0, -1.0, 10.0]
+    [4.0, -1.0,  0.0],
+    [-1.0, 4.0, -1.0],
+    [0.0, -1.0,  4.0]
 ]
-b = [6.0, 25.0, -11.0]
+b = [12.0, -1.0, 5.0]
 
-print("=== Jacobi Method (with checks) ===")
-xj = jacobi_method(A, b, tol=1e-3, max_iter=100)
+print("=== Jacobi Method (with checks, no swapping) ===")
+xj = jacobi_method(A, b, tol=1e-4, max_iter=100)
 print("Final x (Jacobi):", xj)

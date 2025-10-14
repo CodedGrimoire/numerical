@@ -133,11 +133,11 @@ def gauss_seidel_method(A_in, b_in, tol=1e-3, max_iter=100, diverge_patience=5):
 
 # ----- example -----
 A = [
-    [10.0, -1.0,  2.0],
-    [-1.0, 11.0, -1.0],
-    [ 2.0, -1.0, 10.0]
+    [4.0, -1.0,  0],
+    [-1.0, 4, -1.0],
+    [ 0, -1.0, 4]
 ]
-b = [6.0, 25.0, -11.0]
+b = [12, -1, 5]
 
 print("=== Gauss–Seidel (with checks) ===")
 xgs = gauss_seidel_method(A, b, tol=1e-3, max_iter=100)
