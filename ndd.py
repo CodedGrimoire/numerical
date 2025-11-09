@@ -102,6 +102,8 @@ def newton_to_standard(x_nodes, coeffs):
     return poly
 
 
+
+
 def format_power_poly(coeffs, var="x"):
     terms = []
     for i, c in enumerate(coeffs):
@@ -149,6 +151,22 @@ def plot_newton_polys(poly_list, x_range, x_data, y_data):
     plt.legend()
     plt.show()
 
+def plot_convergence(results, x_target):
+    degrees = [deg for deg, *_ in results]
+    values = [val for _, _, _, val, _ in results]
+
+    plt.figure()
+    plt.plot(degrees, values, "o-", label=f"Pₖ({x_target}) values")
+    for i in range(1, len(values)):
+        plt.plot([degrees[i-1], degrees[i]],
+                 [values[i-1], values[i]], "k--", alpha=0.3)
+
+    plt.xlabel("Polynomial Degree (k-1)")
+    plt.ylabel(f"Pₖ({x_target})")
+    plt.title(f"Convergence of Pₖ({x_target})")
+    plt.grid(True)
+    plt.legend()
+    plt.show()
 
 def main():
     validate_xy_lengths(X_ALL, Y_ALL)
@@ -183,7 +201,9 @@ def main():
             print("Δ_2 = (first Newton interpolant)")
         print()
         prev_val = val
-    plot_newton_polys(poly_list, (0.0, 6.0), X_ALL, Y_ALL)
+  
+    plot_convergence(results, X_TARGET)
+
 
 
 if __name__ == "__main__":

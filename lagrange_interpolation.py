@@ -32,31 +32,24 @@ def print_data_table(x_all, y_all):
     print()
 
 
-
-
 def lagrange_poly_coeffs(x_nodes, y_nodes):
     validate_xy_lengths(x_nodes, y_nodes, context="lagrange_poly_coeffs")
     validate_unique_x(x_nodes, context="lagrange_poly_coeffs")
-
     n = len(x_nodes)
     coeffs = [0.0] * n
-
     for i in range(n):
         Li = [1.0]
         denom = 1.0
         xi = x_nodes[i]
-
         for j in range(n):
             if j == i:
                 continue
             xj = x_nodes[j]
             Li = poly_mul(Li, [-xj, 1.0])
             denom *= (xi - xj)
-
         scale = y_nodes[i] / denom
         Li = [coef * scale for coef in Li]
         coeffs = poly_add(coeffs, Li)
-
     return coeffs
 
 
@@ -90,12 +83,10 @@ def poly_eval(coeffs, x):
 def choose_nearest_nodes(x_all, y_all, x_target, k):
     validate_xy_lengths(x_all, y_all, context="choose_nearest_nodes")
     validate_unique_x(x_all, context="choose_nearest_nodes")
-
     triples = [(abs(x - x_target), i, x) for i, x in enumerate(x_all)]
     triples.sort(key=lambda t: t[0])
     chosen = triples[:k]
     chosen.sort(key=lambda t: t[2])
-
     idxs = [t[1] for t in chosen]
     x_nodes = [x_all[i] for i in idxs]
     y_nodes = [y_all[i] for i in idxs]
@@ -105,17 +96,27 @@ def choose_nearest_nodes(x_all, y_all, x_target, k):
 def plot_all_polynomials(polys, x_range, x_data, y_data):
     xmin, xmax = x_range
     xs = [xmin + (xmax - xmin) * t / 200 for t in range(201)]
-
     plt.figure()
     plt.scatter(x_data, y_data, label="data points", zorder=5)
-
     for degree, coeffs in polys:
         ys = [poly_eval(coeffs, x) for x in xs]
         plt.plot(xs, ys, label=f"P{degree}(x)")
-
     plt.xlabel("x")
     plt.ylabel("y")
     plt.title("Lagrange Interpolants Pk(x)")
+    plt.grid(True)
+    plt.legend()
+    plt.show()
+
+
+def plot_convergence(results, x_target):
+    degrees = [deg for deg, *_ in results]
+    values = [val for *_, val in results]
+    plt.figure()
+    plt.plot(degrees, values, "o-", label=f"Pₖ({x_target})")
+    plt.xlabel("Polynomial degree (k)")
+    plt.ylabel(f"Pₖ({x_target})")
+    plt.title(f"Convergence of Pₖ({x_target})")
     plt.grid(True)
     plt.legend()
     plt.show()
@@ -147,33 +148,25 @@ def format_polynomial(coeffs, var="x", tol=1e-10):
 def run_interpolation(x_all, y_all, x_target):
     validate_xy_lengths(x_all, y_all, context="(x_all, y_all)")
     validate_unique_x(x_all, context="x_all")
-
     print_data_table(x_all, y_all)
-
     results = []
     poly_for_plot = []
-
     for k in range(3, len(x_all) + 1):
         x_nodes, y_nodes, idxs = choose_nearest_nodes(x_all, y_all, x_target, k)
         degree = k - 1
-
         coeffs = lagrange_poly_coeffs(x_nodes, y_nodes)
         val = poly_eval(coeffs, x_target)
-
         results.append((degree, x_nodes, coeffs, val))
-
+        poly_for_plot.append((degree, coeffs))
     print("Task 1 — Lagrange Interpolating Polynomial")
     print(f"Target x = {x_target}\n")
-
     prev_val = None
-
     for (degree, x_nodes, coeffs, val) in results:
         print(f"--- P_{degree}(x) ---")
         print(f"nodes used (closest to {x_target}): {x_nodes}")
         poly_str = format_polynomial(coeffs, var="x")
         print(f"P_{degree}(x) = {poly_str}")
         print(f"P_{degree}({x_target}) = {val:.10f}")
-
         if prev_val is not None:
             delta = val - prev_val
             print(
@@ -183,11 +176,9 @@ def run_interpolation(x_all, y_all, x_target):
         else:
             print("Δ_2 = (first interpolant)")
         print()
-
         prev_val = val
-        poly_for_plot.append((degree, coeffs))
-
-    plot_all_polynomials(poly_for_plot, (min(x_all), max(x_all)), x_all, y_all)
+    plot_convergence(results, x_target)
+   
 
 
 def main():
