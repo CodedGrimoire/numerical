@@ -23,11 +23,9 @@ def print_data_table():
 # helpers: choose nearest nodes to target
 # -------------------------------------------------
 def choose_nearest_nodes(x_all, y_all, x_target, k):
-    # sort by distance to target
     triples = [(abs(x - x_target), i, x) for i, x in enumerate(x_all)]
     triples.sort(key=lambda t: t[0])
     chosen = triples[:k]
-    # keep in x-order
     chosen.sort(key=lambda t: t[2])
     idxs = [t[1] for t in chosen]
     x_nodes = [x_all[i] for i in idxs]
@@ -82,171 +80,183 @@ def newton_evaluate(x_nodes, coeffs, x):
 
 
 # -------------------------------------------------
+# Convert Newton → Monomial (for full polynomial print)
+# -------------------------------------------------
+def newton_to_monomial(x_nodes, coeffs):
+    n = len(coeffs)
+    poly = [1.0]
+    result = [0.0] * n
+    for k in range(n):
+        for i, c in enumerate(poly):
+            result[i] += coeffs[k] * c
+        if k < n - 1:
+            xk = x_nodes[k]
+            new_poly = [0.0] * (len(poly) + 1)
+            for i, c in enumerate(poly):
+                new_poly[i + 1] += c
+                new_poly[i] -= xk * c
+            poly = new_poly
+    return result
+
+
+def print_polynomial(coeffs):
+    print("\nFINAL FULL-DEGREE POLYNOMIAL (degree 8):\n")
+    terms = []
+    for i, c in enumerate(coeffs):
+        terms.append(f"{c:.10e} * x^{i}")
+    print("P(x) = " + " + ".join(terms))
+    print()
+
+
+# -------------------------------------------------
 # curve generators
 # -------------------------------------------------
 def lagrange_curve(x_nodes, y_nodes, xmin=0, xmax=100, num=200):
-    xs = []
-    ys = []
+    xs, ys = [], []
     step = (xmax - xmin) / (num - 1)
     for k in range(num):
         x = xmin + k * step
-        y = lagrange_value(x_nodes, y_nodes, x)
+        ys.append(lagrange_value(x_nodes, y_nodes, x))
         xs.append(x)
-        ys.append(y)
     return xs, ys
 
 
 def newton_curve(x_nodes, coeffs, xmin=0, xmax=100, num=200):
-    xs = []
-    ys = []
+    xs, ys = [], []
     step = (xmax - xmin) / (num - 1)
     for k in range(num):
         x = xmin + k * step
-        y = newton_evaluate(x_nodes, coeffs, x)
+        ys.append(newton_evaluate(x_nodes, coeffs, x))
         xs.append(x)
-        ys.append(y)
     return xs, ys
 
 
 # -------------------------------------------------
-# plotting
+# NEW: Plot ALL requested degrees in one graph
 # -------------------------------------------------
-def plot_full_curves(lagrange_xy, newton_xy, x_data, y_data):
-    """plot only the FULL-degree curves on [0,100] as lab asked"""
-    plt.figure()
-    plt.scatter(x_data, y_data, label="sensor data", zorder=5)
-    xl, yl = lagrange_xy
-    xn, yn = newton_xy
-    plt.plot(xl, yl, label="Lagrange (full degree)")
-    plt.plot(xn, yn, label="Newton (full degree)", linestyle="--")
+def plot_all_interpolations(node_counts, X_ALL, T_ALL):
+    plt.figure(figsize=(10,6))
+
+    plt.scatter(X_ALL, T_ALL, color="black", s=50, label="Sensor Data")
+
+    colors = ["blue", "green", "orange", "purple"]
+
+    for idx, k in enumerate(node_counts):
+        deg = k - 1
+        x_nodes, y_nodes = choose_nearest_nodes(X_ALL, T_ALL, X_TARGET, k)
+
+        # --- Lagrange ---
+        xs_L, ys_L = lagrange_curve(x_nodes, y_nodes)
+        plt.plot(xs_L, ys_L, color=colors[idx],
+                 label=f"Lagrange Degree {deg}", linewidth=2)
+
+        # --- Newton ---
+        table = divided_difference_table(x_nodes, y_nodes)
+        coeffs = newton_coeffs_from_table(table)
+        xs_N, ys_N = newton_curve(x_nodes, coeffs)
+        plt.plot(xs_N, ys_N, linestyle="--",
+                 color=colors[idx],
+                 label=f"Newton Degree {deg}", linewidth=2)
+
     plt.xlabel("Distance (km)")
     plt.ylabel("Temperature (°C)")
-    plt.title("Interpolated Temperature Along Highway (full degree)")
+    plt.title("Interpolating Polynomials of Degree 2, 3, 4, and 8 (Lagrange & Newton)")
     plt.grid(True)
     plt.legend()
+    plt.tight_layout()
     plt.show()
 
 
-def plot_local_low_degree(low_deg_polys):
-    """
-    show 2nd, 3rd, 4th-degree polynomials only over the span of
-    the nodes they used, so they don't look weird
-    """
-    plt.figure()
-    for label, x_nodes, fn in low_deg_polys:
-        xmin = min(x_nodes)
-        xmax = max(x_nodes)
-        xs = [xmin + (xmax - xmin) * t / 200 for t in range(201)]
-        ys = [fn(x) for x in xs]
-        plt.plot(xs, ys, label=label)
-    # we can also show sensor points for context
-    plt.scatter(X_ALL, T_ALL, label="sensor data", zorder=5)
-    plt.xlabel("Distance (km)")
-    plt.ylabel("Temperature (°C)")
-    plt.title("Local Interpolants (2nd, 3rd, 4th degree)")
-    plt.grid(True)
-    plt.legend()
-    plt.show()
-
-
+# -------------------------------------------------
+# Convergence plots
+# -------------------------------------------------
 def plot_convergence(degrees, L_vals, N_vals):
-    plt.figure()
-    plt.plot(degrees, L_vals, marker="o", label="Lagrange T(45)")
-    plt.plot(degrees, N_vals, marker="s", label="Newton T(45)")
-    plt.xlabel("Polynomial degree")
+    plt.figure(figsize=(9,5))
+    plt.plot(degrees, L_vals, marker="o", color="blue", label="Lagrange T(45)")
+    shifted = [d + 0.05 for d in degrees]
+    plt.plot(shifted, N_vals, marker="s", linestyle="--", color="red", label="Newton T(45)")
+    plt.xlabel("Polynomial Degree")
     plt.ylabel("Temperature at 45 km (°C)")
-    plt.title("Convergence of Interpolation at x = 45 km")
+    plt.title("Convergence Curve")
+    plt.grid(True)
+    plt.legend()
+    plt.show()
+
+
+def plot_delta_convergence(degrees, L_deltas, N_deltas):
+    plt.figure(figsize=(9,5))
+    plt.plot(degrees[1:], L_deltas[1:], marker="o", color="blue",
+             label="Δₖ Lagrange")
+    plt.plot(degrees[1:], N_deltas[1:], marker="s", linestyle="--",
+             color="red", label="Δₖ Newton")
+    plt.xlabel("Polynomial Degree")
+    plt.ylabel("Δₖ = Pₖ(45) − Pₖ₋₁(45)")
+    plt.title("Δₖ Convergence (Successive Differences)")
     plt.grid(True)
     plt.legend()
     plt.show()
 
 
 # -------------------------------------------------
-# main logic for lab report
+# main logic
 # -------------------------------------------------
 def main():
     print_data_table()
 
-    # degrees: 2nd, 3rd, 4th, full (8th)
+    # Required: 3,4,5,9 nodes → degrees 2,3,4,8
     node_counts = [3, 4, 5, len(X_ALL)]
-    lagrange_results = []  # (degree, value_at_45)
-    newton_results = []    # (degree, value_at_45)
-    local_polys = []       # for nice local plot
+
+    lagrange_results = []
+    newton_results = []
+    lagrange_deltas = []
+    newton_deltas = []
 
     print("=== Lagrange interpolation at x = 45 km ===")
     prev_val = None
     for k in node_counts:
         x_nodes, y_nodes = choose_nearest_nodes(X_ALL, T_ALL, X_TARGET, k)
         val = lagrange_value(x_nodes, y_nodes, X_TARGET)
-        degree = k - 1
         if prev_val is None:
-            delta = None
+            lagrange_deltas.append(None)
         else:
-            delta = val - prev_val
-        print(f"P_{degree}(45) using nodes {x_nodes} -> {val:.8f} °C", end="")
-        if delta is not None:
-            print(f"   Δ = {delta:.8f}")
-        else:
-            print("   Δ = (first)")
+            lagrange_deltas.append(val - prev_val)
         prev_val = val
+        degree = k - 1
+        print(f"Lagrange deg {degree}: {val:.8f}")
         lagrange_results.append((degree, val))
 
-        # save local lagrange function for plotting (only for low degrees)
-        if k != len(X_ALL):
-            def make_lag_fn(xn=x_nodes, yn=y_nodes):
-                return lambda xx: lagrange_value(xn, yn, xx)
-            local_polys.append((f"Lagrange P_{degree}", x_nodes, make_lag_fn()))
-
-    print()
-
-    print("=== Newton’s divided-difference interpolation at x = 45 km ===")
+    print("\n=== Newton interpolation at x = 45 km ===")
     prev_val = None
     for k in node_counts:
         x_nodes, y_nodes = choose_nearest_nodes(X_ALL, T_ALL, X_TARGET, k)
         table = divided_difference_table(x_nodes, y_nodes)
         coeffs = newton_coeffs_from_table(table)
         val = newton_evaluate(x_nodes, coeffs, X_TARGET)
-        degree = k - 1
         if prev_val is None:
-            delta = None
+            newton_deltas.append(None)
         else:
-            delta = abs(val - prev_val)
-        print(f"N_{degree}(45) using nodes {x_nodes} -> {val:.8f} °C", end="")
-        if delta is not None:
-            print(f"   Δ = {delta:.8f}")
-        else:
-            print("   Δ = (first)")
+            newton_deltas.append(val - prev_val)
         prev_val = val
+        degree = k - 1
+        print(f"Newton deg {degree}: {val:.8f}")
         newton_results.append((degree, val))
 
-        # save local newton function too (only for low degrees)
-        if k != len(X_ALL):
-            def make_newt_fn(xn=x_nodes, cf=coeffs):
-                return lambda xx: newton_evaluate(xn, cf, xx)
-            local_polys.append((f"Newton N_{degree}", x_nodes, make_newt_fn()))
-
-    print()
-
-    # full-degree curves for plotting
-    # Lagrange full
-    x_full_lag, y_full_lag = lagrange_curve(X_ALL, T_ALL, xmin=0, xmax=100, num=200)
-
-    # Newton full
+    # Full polynomial print
     full_table = divided_difference_table(X_ALL, T_ALL)
     full_coeffs = newton_coeffs_from_table(full_table)
-    x_full_newt, y_full_newt = newton_curve(X_ALL, full_coeffs, xmin=0, xmax=100, num=200)
+    monomial = newton_to_monomial(X_ALL, full_coeffs)
+    print_polynomial(monomial)
 
-    # plot interpolated vs data (full-degree only)
-    plot_full_curves((x_full_lag, y_full_lag), (x_full_newt, y_full_newt), X_ALL, T_ALL)
+    # ---- PLOT ALL DEGREES IN ONE GRAPH ----
+    plot_all_interpolations(node_counts, X_ALL, T_ALL)
 
-    # plot local low-degree polynomials on their own spans (to avoid weird graph)
-    plot_local_low_degree(local_polys)
-
-    # convergence plot
+    # ---- Convergence ----
     degrees = [d for (d, _) in lagrange_results]
     L_vals = [v for (_, v) in lagrange_results]
     N_vals = [v for (_, v) in newton_results]
+
     plot_convergence(degrees, L_vals, N_vals)
+    plot_delta_convergence(degrees, lagrange_deltas, newton_deltas)
 
 
 if __name__ == "__main__":
